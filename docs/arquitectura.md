@@ -7,13 +7,13 @@ Gmail (mails del banco)
    │  trigger de tiempo (scanGmailAndRegisterExpenses)
    ▼
 Google Apps Script "Script Gastos"  ──►  Google Sheet (Gastos, Reglas, Categorias, Log, Dashboards)
-   ▲  doPost (JSON; doGet temporal)
+   ▲  doPost (JSON)
    │
 PWA en Netlify (public/)  (incluye Chart.js en public/vendor/)
 ```
 
 1. **Ingesta.** Un trigger de tiempo corre `scanGmailAndRegisterExpenses`. Busca mails de `bancoedwards.cl` o `bancochile.cl` de los últimos 10 días, los parsea con regex según el asunto y agrega filas nuevas a la hoja `Gastos`. Evita duplicados por ID de mail. Si el comercio tiene regla en `Reglas`, el gasto entra categorizado y confirmado; si no, queda pendiente de revisar. Las transferencias siempre quedan pendientes.
-2. **API.** El mismo script expone un Web App con `doPost` para lecturas y escrituras (`doGet` sigue activo un tiempo por compatibilidad). Toda llamada lleva un secreto compartido en el cuerpo, no en la URL. Ver [api-backend.md](api-backend.md).
+2. **API.** El mismo script expone un Web App con `doPost` para lecturas y escrituras. Toda llamada lleva un secreto compartido en el cuerpo, no en la URL. Ver [api-backend.md](api-backend.md).
 3. **Frontend.** PWA de una página. Lee todo con `getExpenses` al abrir y cada vez que la app vuelve a primer plano.
 
 ## Frontend

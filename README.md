@@ -6,7 +6,7 @@ PWA personal para ver, revisar y corregir gastos. Los gastos llegan solos: un sc
 
 1. El banco envía un mail a Gmail.
 2. Un trigger de Apps Script (07, 15 y 20 h) busca mails nuevos, extrae monto, comercio y fecha con expresiones regulares y agrega una fila a la hoja `Gastos`. Si el comercio tiene regla en la hoja `Reglas`, el gasto queda categorizado y confirmado. Si no, queda pendiente de revisar.
-3. La app (`public/`) consulta esos datos con `doGet` y `doPost` del script, y los muestra en vistas: mensual, promedio, proyección, gastos y revisar.
+3. La app (`public/`) consulta esos datos con `doPost` del script, y los muestra en vistas: mensual, promedio, proyección, gastos y revisar.
 4. Promedio, gastos fijos, atípicos y proyección se calculan en el navegador.
 
 Detalle en [docs/arquitectura.md](docs/arquitectura.md).

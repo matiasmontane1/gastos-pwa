@@ -293,7 +293,7 @@ function addCategory_(nombre) {
       }
 
 
-    // Lecturas que comparten doPost (la app) y doGet (temporal, ver S3).
+    // Lecturas de la app (van por doPost, ver S3).
     function handleRead_(action) {
       if (action === 'getExpenses') return { ok: true, expenses: getExpenses_() };
       if (action === 'getLastRun') return { ok: true, lastRun: getLastSuccessfulRun_() };
@@ -303,14 +303,10 @@ function addCategory_(nombre) {
       return null;
     }
 
-    // S3 (oct 2026): la app ya no usa doGet, lee por POST. Se mantiene un tiempo para que las
-    // copias viejas de la app sigan funcionando; despues se quita.
+    // S3 (oct 2026): la app lee y escribe solo por doPost, con la clave en el cuerpo. doGet ya no lee
+    // nada ni toca la clave: solo avisa a las copias viejas de la app que deben actualizarse.
     function doGet(e) {
-      try {
-        checkAuth_(e);
-        var lectura = handleRead_(e.parameter.action);
-        return jsonOut_(lectura || { ok: false, error: 'unknown action' });
-      } catch (err) { return jsonOut_({ ok: false, error: String(err) }); }
+      return jsonOut_({ ok: false, error: 'Actualiza la app: ahora usa POST' });
     }
 
     // S4 (oct 2026): solo quedan las acciones que usa la app. Las demas funciones

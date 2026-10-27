@@ -8,7 +8,7 @@ Ver [`backend/README.md`](../backend/README.md): `clasp pull` → editar `backen
 
 ## Autenticación
 
-Cada llamada manda `secret` como campo del JSON de un POST (la clave no viaja en la URL). `doGet` todavía acepta el query param, solo por compatibilidad con copias viejas de la app; se retira más adelante. `checkAuth_` lo compara con la propiedad `API_SECRET` de **Configuración del proyecto → Propiedades del script** y lanza `unauthorized` si no coincide o si la propiedad no existe. La clave no está en el código del backend ni en el del frontend: la app la pide una vez por dispositivo (pantalla "Clave de acceso") y la guarda en `localStorage`.
+Cada llamada manda `secret` como campo del JSON de un POST (la clave no viaja en la URL). `checkAuth_` lo compara con la propiedad `API_SECRET` de **Configuración del proyecto → Propiedades del script** y lanza `unauthorized` si no coincide o si la propiedad no existe. La clave no está en el código del backend ni en el del frontend: la app la pide una vez por dispositivo (pantalla "Clave de acceso") y la guarda en `localStorage`.
 
 Debe ser larga y aleatoria (32 caracteres o más). Para rotarla: cambiar el valor de la propiedad (no hace falta publicar versión nueva) y escribir la clave nueva en cada dispositivo; la app la pide sola al recibir `unauthorized`.
 
@@ -20,7 +20,7 @@ Todas las respuestas son JSON con `ok: true|false`. Si falla, viene `error`.
 
 Desde la Versión 29 el Web App solo expone las acciones que usa la app (S4).
 
-## Acciones de lectura (`doPost`; `doGet` temporal)
+## Acciones de lectura (`doPost`)
 
 Se resuelven antes del bloqueo de escritura, porque leer no escribe.
 
@@ -99,7 +99,8 @@ Ojo en el selector de funciones del editor: `runSetupNow` llama a `setupSheet()`
 
 | Versión | Fecha | Cambio |
 |---|---|---|
-| 30 | 2026-10-27 | S3: las lecturas van por POST (la clave ya no viaja en la URL) y `doGet` queda temporal. B8: agregar un gasto manual ya no reconstruye los dashboards. `updateExpense` acepta `fecha` (no futura) |
+| 31 | 2026-10-27 | S3 completo: `doGet` ya no lee ni valida la clave; solo responde `Actualiza la app: ahora usa POST` a copias viejas de la app |
+| 30 | 2026-10-27 | S3: las lecturas van por POST (la clave ya no viaja en la URL). B8: agregar un gasto manual ya no reconstruye los dashboards. `updateExpense` acepta `fecha` (no futura) |
 | 29 | 2026-10-15 | S4: se quitaron del Web App 9 acciones que la app no usaba (getRules, getProcessedIds, appendExpense(s), upsertRule, rebuildDashboards, runGmailScan, resetExpenseToPending, appendLog) |
 | 28 | 2026-10-15 | S3: `checkAuth_` lee la clave desde Propiedades del script; sin secreto en el código. Se archivó la implementación vieja de la Versión 7 |
 | 27 | 2026-10-15 | El escaneo ignora los mails con "Cartola" en el asunto (cartola mensual) para que no aparezcan como "sin reconocer" |
