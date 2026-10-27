@@ -1,0 +1,5 @@
+# Netlify publica solo la carpeta public/ (sin build).
+# Así docs/, CLAUDE.md y el resto del repo no quedan expuestos en el sitio.
+[build]
+  publish = "public"
+  command = ""

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gastos</title>
+<meta name="theme-color" content="#0b0d11">
+<meta name="description" content="Control de Gastos personal">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gastos">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div id="keyScreen" class="key-screen hidden">
+  <form id="keyForm" class="key-card" novalidate>
+    <div class="key-title">Clave de acceso</div>
+    <p id="keyMsg" class="key-msg">Escribe la clave del backend. Se guarda solo en este dispositivo.</p>
+    <input type="password" id="keyInput" class="text-input" autocomplete="current-password" autocapitalize="off" spellcheck="false" placeholder="Clave">
+    <button type="submit" class="expense-action-btn primary key-submit">Entrar</button>
+  </form>
+</div>
+
+<header class="topbar">
+  <div class="topbar-title">
+    <span class="topbar-logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="20" height="20"><path d="M4 19h16M6 19V10M12 19V5M18 19v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </span>
+    <h1>Gastos</h1>
+    <span id="lastRunLabel" class="last-run-label"></span>
+  </div>
+  <div class="topbar-actions">
+    <button id="privacyBtn" class="icon-btn" title="Ocultar montos" aria-label="Ocultar o mostrar montos" aria-pressed="false">
+      <svg viewBox="0 0 24 24" width="19" height="19"><path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg>
+    </button>
+    <button id="refreshBtn" class="icon-btn" title="Actualizar" aria-label="Actualizar datos">
+      <svg viewBox="0 0 24 24" width="19" height="19"><path d="M4 4v6h6M20 20v-6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 15a8 8 0 0 0 13.9 2.7M18.5 9A8 8 0 0 0 4.6 6.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</header>
+
+<div id="statusBar" class="status-bar hidden"></div>
+
+<main id="main">
+
+  <!-- ============ VISTA MENSUAL ============ -->
+  <section id="view-mensual" class="view">
+    <div class="month-select-row">
+      <label for="mesSelect" class="field-label">Mes</label>
+      <select id="mesSelect" class="select-pill"></select>
+    </div>
+
+    <div class="card hero-card">
+      <div class="hero-label">Gasto total del mes</div>
+      <div class="hero-value" id="mensualTotal">$0</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Por categoría</div>
+      <div class="chart-wrap" id="mensualChartWrap"><canvas id="mensualPieChart"></canvas></div>
+      <div id="mensualCategorias" class="cat-legend"></div>
+      <div id="mensualCatEmpty" class="empty-msg hidden">Sin datos para este mes.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Transacciones</div>
+      <div id="mensualLista" class="tx-list"></div>
+      <div id="mensualTxEmpty" class="empty-msg hidden">Sin transacciones este mes.</div>
+    </div>
+
+    <div class="card projection-card projection-card-clickable" id="projectionCard" role="button" tabindex="0" aria-label="Ver el detalle del cálculo de la proyección">
+      <div class="card-title-row">
+        <div class="card-title">Proyección de fin de mes</div>
+        <span class="projection-compare hidden" id="projectionCompare"></span>
+      </div>
+      <div id="projectionBody">
+        <div class="hero-label" id="projectionMonthLabel">—</div>
+        <div class="hero-value" id="projectionValue">$0</div>
+        <div class="projection-sub">
+          <span id="projectionDailyRate" data-amount="0">$0</span>/día variable · lleva <span id="projectionDayOfMonth">0</span> de <span id="projectionDaysInMonth">0</span> días
+        </div>
+        <div class="projection-fixed-note hidden" id="projectionFixedNote">
+          + <span id="projectionFixedPending" data-amount="0">$0</span> en gastos fijos pendientes este mes
+        </div>
+      </div>
+      <div id="projectionEmpty" class="empty-msg hidden"></div>
+      <div class="projection-detail-hint">Ver cómo se calculó ›</div>
+    </div>
+  </section>
+
+  <!-- ============ DETALLE DE PROYECCIÓN ============ -->
+  <section id="view-proyeccion-detalle" class="view hidden">
+    <button type="button" class="config-back-btn" id="projectionDetailBack">‹ Mensual</button>
+
+    <div id="projectionDetailEmpty" class="empty-msg hidden"></div>
+
+    <div id="projectionDetailBody">
+      <div class="card projection-today-card" id="projectionTodayCard">
+        <div class="hero-label" id="projectionTodayLabel">Saldo disponible para hoy</div>
+        <div class="hero-value" id="projectionTodayValue">$0</div>
+        <div class="projection-today-sub" id="projectionTodaySub"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Cómo se calculó</div>
+        <div id="projectionDetailFormula" class="mini-stats"></div>
+        <div id="projectionDetailCompare" class="projection-detail-compare-inline"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Gasto acumulado real vs proyectado</div>
+        <div class="chart-wrap projection-chart-wrap"><canvas id="projectionCurveChart"></canvas></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Gastos fijos este mes</div>
+        <div id="projectionDetailFixed" class="tx-list"></div>
+        <div id="projectionDetailFixedEmpty" class="empty-msg hidden">No se detectaron gastos fijos este mes.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Ritmo por día de la semana (días que quedan)</div>
+        <div id="projectionDetailWeekday" class="tx-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Gastos variables y atípicos excluidos</div>
+        <div id="projectionDetailOutlierNote" class="projection-outlier-note"></div>
+        <div id="projectionDetailVariable" class="tx-list"></div>
+        <div id="projectionDetailVariableEmpty" class="empty-msg hidden">Sin gastos variables este mes.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Base histórica del umbral</div>
+        <div id="projectionDetailHistBasis" class="mini-stats"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ VISTA PROMEDIO ============ -->
+  <section id="view-promedio" class="view hidden">
+    <div class="card hero-card">
+      <div class="hero-label">Promedio mensual</div>
+      <div class="hero-value" id="promedioTotal">$0</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Promedio mensual por categoría</div>
+      <div class="chart-wrap" id="promedioChartWrap"><canvas id="promedioPieChart"></canvas></div>
+      <div id="promedioCategorias" class="cat-legend"></div>
+      <div id="promedioCatEmpty" class="empty-msg hidden">Todavía no hay datos suficientes.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title-row">
+        <div class="card-title">Gasto por mes</div>
+        <select id="filtroBarCategoria" class="select-pill select-pill-sm">
+          <option value="all">Total</option>
+        </select>
+      </div>
+      <div class="chart-wrap chart-wrap-bar" id="promedioBarChartWrap"><canvas id="promedioBarChart"></canvas></div>
+      <div id="promedioBarEmpty" class="empty-msg hidden">Todavía no hay datos suficientes.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">General</div>
+      <div class="mini-stats">
+        <div class="mini-stat mini-stat-detailed">
+          <span class="mini-stat-labels">
+            <span class="mini-stat-label">Gasto máximo</span>
+            <span class="mini-stat-sub" id="promedioMax30Sub"></span>
+          </span>
+          <span class="mini-stat-value" id="promedioMax30">$0</span>
+        </div>
+        <div class="mini-stat mini-stat-detailed">
+          <span class="mini-stat-labels">
+            <span class="mini-stat-label">Gasto mínimo</span>
+            <span class="mini-stat-sub" id="promedioMin30Sub"></span>
+          </span>
+          <span class="mini-stat-value" id="promedioMin30">$0</span>
+        </div>
+        <div class="mini-stat">
+          <span class="mini-stat-label">Pendientes de revisar</span>
+          <span class="mini-stat-value-group">
+            <span class="mini-stat-value" id="promedioPendientes">0</span>
+            <button class="mini-stat-action hidden" id="goReviewBtn">Revisar →</button>
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ VISTA GASTOS ============ -->
+  <section id="view-gastos" class="view hidden">
+    <div class="filters-row">
+      <select id="filtroEstado" class="select-pill">
+        <option value="all">Todos los estados</option>
+        <option value="pendiente de revisar">Pendientes de revisar</option>
+        <option value="auto - sin confirmar">Auto — sin confirmar</option>
+        <option value="confirmado">Confirmados</option>
+      </select>
+      <select id="filtroMes" class="select-pill">
+        <option value="all">Todos los meses</option>
+      </select>
+    </div>
+    <div class="filters-row">
+      <select id="filtroCategoria" class="select-pill">
+        <option value="all">Todas las categorías</option>
+      </select>
+    </div>
+
+    <div id="gastosLista" class="expense-list"></div>
+    <div id="gastosEmpty" class="empty-msg hidden">No hay gastos para este filtro.</div>
+  </section>
+
+  <!-- ============ VISTA CONFIGURACIÓN ============ -->
+  <section id="view-config" class="view hidden">
+    <div id="configMenu" class="config-menu">
+      <button type="button" class="config-menu-item" data-config-section="categorias">
+        <span class="config-menu-icon">🏷️</span>
+        <span class="config-menu-text">
+          <span class="config-menu-title">Categorías</span>
+          <span class="config-menu-sub">Crear, renombrar y elegir íconos</span>
+        </span>
+        <span class="config-menu-chevron">›</span>
+      </button>
+      <button type="button" class="config-menu-item" data-config-section="comprobante">
+        <span class="config-menu-icon">➕</span>
+        <span class="config-menu-text">
+          <span class="config-menu-title">Agregar gasto</span>
+          <span class="config-menu-sub">Registrar un gasto a mano</span>
+        </span>
+        <span class="config-menu-chevron">›</span>
+      </button>
+      <button type="button" class="config-menu-item" data-config-section="logs">
+        <span class="config-menu-icon">📋</span>
+        <span class="config-menu-text">
+          <span class="config-menu-title">Logs de registro</span>
+          <span class="config-menu-sub">Historial de la tarea automática</span>
+        </span>
+        <span class="config-menu-chevron">›</span>
+      </button>
+      <button type="button" class="config-menu-item" data-config-section="eliminados">
+        <span class="config-menu-icon">♻️</span>
+        <span class="config-menu-text">
+          <span class="config-menu-title">Gastos eliminados</span>
+          <span class="config-menu-sub">Restaurar un gasto borrado</span>
+        </span>
+        <span class="config-menu-chevron">›</span>
+      </button>
+    </div>
+
+    <div id="configSectionCategorias" class="config-section hidden">
+      <button type="button" class="config-back-btn" data-config-back>‹ Configuración</button>
+      <div class="card">
+        <div class="card-title">Categorías</div>
+        <div class="config-add-row">
+          <input type="text" id="nuevaCategoriaInput" class="text-input" placeholder="Nueva categoría…">
+          <button id="addCategoriaBtn" class="expense-action-btn primary">Agregar</button>
+        </div>
+        <div id="categoriasLista" class="categorias-list"></div>
+        <div id="categoriasEmpty" class="empty-msg hidden">No hay categorías todavía.</div>
+      </div>
+    </div>
+
+    <div id="configSectionComprobante" class="config-section hidden">
+      <button type="button" class="config-back-btn" data-config-back>‹ Configuración</button>
+      <div class="card">
+        <div class="card-title">Agregar gasto</div>
+        <form id="comprobanteForm" novalidate>
+          <label class="form-field">
+            <span class="form-field-label">Fecha</span>
+            <input type="date" id="comprobanteFecha" class="text-input" required>
+          </label>
+          <label class="form-field">
+            <span class="form-field-label">Monto</span>
+            <input type="number" id="comprobanteMonto" class="text-input" placeholder="0" min="0" step="1" inputmode="numeric" required>
+          </label>
+          <label class="form-field">
+            <span class="form-field-label">Comercio / descripción</span>
+            <input type="text" id="comprobanteComercio" class="text-input" placeholder="Ej: Unimarc" required>
+          </label>
+          <label class="form-field">
+            <span class="form-field-label">Categoría</span>
+            <select id="comprobanteCategoria" class="select-pill select-pill-full"></select>
+          </label>
+          <button type="submit" id="comprobanteSubmitBtn" class="expense-action-btn primary comprobante-submit">Agregar gasto</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="configSectionLogs" class="config-section hidden">
+      <div class="card">
+        <div id="logsListWrap">
+          <button type="button" class="config-back-btn" data-config-back>‹ Configuración</button>
+          <div class="card-title">Logs de registro</div>
+          <div id="logsLoading" class="empty-msg hidden">Cargando…</div>
+          <div id="logsLista" class="logs-list"></div>
+          <div id="logsEmpty" class="empty-msg hidden">No hay registros todavía.</div>
+        </div>
+        <div id="logsDetailWrap" class="hidden">
+          <button type="button" class="config-back-btn log-detail-back" data-logs-detail-back>‹ Logs</button>
+          <div class="log-detail-top">
+            <span id="logsDetailDate" class="log-row-date"></span>
+            <span id="logsDetailBadge" class="log-row-badge"></span>
+          </div>
+          <div id="logsDetailResumen" class="log-detail-resumen"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="configSectionEliminados" class="config-section hidden">
+      <button type="button" class="config-back-btn" data-config-back>‹ Configuración</button>
+      <div class="card">
+        <div class="card-title">Gastos eliminados</div>
+        <div id="eliminadosLoading" class="empty-msg hidden">Cargando…</div>
+        <div id="eliminadosLista" class="eliminados-list"></div>
+        <div id="eliminadosEmpty" class="empty-msg hidden">No hay gastos eliminados.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ VISTA REVISAR PENDIENTES ============ -->
+  <section id="view-revisar" class="view hidden">
+    <div class="card review-card" id="reviewCardWrap">
+      <div class="review-progress" id="reviewProgress">0 de 0</div>
+      <div class="review-body" id="reviewBody"></div>
+    </div>
+    <div id="reviewEmpty" class="empty-msg hidden">¡Todo revisado! No quedan gastos pendientes.</div>
+  </section>
+
+</main>
+
+<div id="undoToast" class="undo-toast hidden" role="status" aria-live="polite">
+  <span id="undoToastMsg" class="undo-toast-msg"></span>
+  <button type="button" id="undoToastBtn" class="undo-toast-btn">Deshacer</button>
+</div>
+
+<nav class="bottom-nav">
+  <button class="nav-btn active" data-view="mensual">
+    <svg viewBox="0 0 24 24" width="21" height="21"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <span>Mensual</span>
+  </button>
+  <button class="nav-btn" data-view="promedio">
+    <svg viewBox="0 0 24 24" width="21" height="21"><path d="M4 19h16M7 19v-6M12 19V7M17 19v-9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <span>Promedio</span>
+  </button>
+  <button class="nav-btn" data-view="gastos">
+    <svg viewBox="0 0 24 24" width="21" height="21"><path d="M5 6h14M5 12h14M5 18h9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <span>Gastos</span>
+  </button>
+  <button class="nav-btn" data-view="revisar">
+    <svg viewBox="0 0 24 24" width="21" height="21"><path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>Revisar</span>
+  </button>
+  <button class="nav-btn" data-view="config">
+    <svg viewBox="0 0 24 24" width="21" height="21"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+    <span>Config.</span>
+  </button>
+</nav>
+
+<script src="vendor/chart.umd.min.js"></script>
+<!-- Scripts clásicos (sin build): comparten el ámbito global; el orden importa solo para constantes usadas al cargar. -->
+<script src="js/config.js"></script>
+<script src="js/calc.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/views/mensual.js"></script>
+<script src="js/views/proyeccion.js"></script>
+<script src="js/views/promedio.js"></script>
+<script src="js/views/gastos.js"></script>
+<script src="js/views/config.js"></script>
+<script src="js/views/revisar.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(function(){});
+    });
+  }
+</script>
+</body>
+</html>
